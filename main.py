@@ -16,28 +16,47 @@ class player:
         self.lvl = 1
         self.maxhp = 20
         self.hp = 15
-        self.mp = 0
         self.attack = 10
         self.status_effects = []
         self.inventory = {}
-        self.gold = 100
-
-# Call in-game Objects   
+        self.gold = 100 
 mainPlayer = player()
 
 # Declare Master List of Items and Sell Values
-itemList = {
-    # Potions
-    "Potion": 30,
-    "Antidote": 20,
-    
+pricelist = {
     # Weapons
-    "Wooden Sword": 30,
+    "Wooden Sword": 150,
     "Iron Dagger": 100,
+    "Rusty Sword": 30,
+    "Orc Axe": 200,
+    "Cursed Blade": 500,
     
     # Armor / Gear
-    "Leather Armor": 30,
+    "Leather Armor": 150,
     "Bronze Shield": 40,
+    
+    # Healing Items
+    "Potion": 50,
+    "Antidote": 50,
+    
+    # Dropped Items
+    "Bone Fragment": 20,
+    "Minotaur Horn": 50,
+    "Orc Tooth": 50,
+    "Dark Crystal": 100,
+}
+
+# Make a list of consumables
+usable_items = ['Potion', 'Antidote']
+
+# Healing Items List
+healing = {
+    # HP Recovery
+    "Potion": [10, None],
+    "Super Potion": [30, None],
+    
+    # Status Effect Recovery
+    "Antidote": [None, "Poison"]
 }
 
 # Declare item effects
@@ -46,12 +65,20 @@ def use_item(used):
     print("You used", used)
     print()
     
+    if healing[used][0] != None:
+        mainPlayer.hp += healing[used][0]
+        if mainPlayer.hp > mainPlayer.maxhp:
+            mainPlayer.hp = mainPlayer.maxhp
+        print("Your HP is filled by ", healing[used][0], "!", sep='')
+        msvcrt.getch()
+    '''
     if used == "Potion":
         mainPlayer.hp += 10
         if mainPlayer.hp > mainPlayer.maxhp:
             mainPlayer.hp = mainPlayer.maxhp
         print("Your HP is filled by 10!")
         msvcrt.getch()
+    '''
 
 # Enemy Class Definition
 class enemy:
@@ -81,9 +108,9 @@ def enemy_creation():
         return enemy("Dark Knight", 10, 20, ["Gold", "Dark Crystal", "Cursed Blade"], [40, 30, 30])
     
     return [create_goblin, create_minotaur, create_skeleton, create_orc, create_dark_knight]
-
 enemies = enemy_creation()
 
+# Check inventory function
 def check_inv():
     
     print("Inventory:")
@@ -92,13 +119,11 @@ def check_inv():
     for i in mainPlayer.inventory:
         print(i, "x", mainPlayer.inventory.get(i))
 
-# Check stats func  
+# Check stats function
 def check_stats():
     print("HP:", mainPlayer.hp)
     print("Attack:", mainPlayer.attack)
     print("Gold:", mainPlayer.gold)
-
-usable_items = ['Potion', 'Antidote']
 
 # Enemy Encounter Function    
 def enemy_encounter():
@@ -124,9 +149,9 @@ def enemy_encounter():
             break
         
         if playerTurn == True:
-            print(action)
             print('Enemy:', enemy.name)
-            print('HP:', enemy.hp)
+            print('Enemy HP:', enemy.hp)
+            print()
             print('What would you like to do?')
             print('[1] Attack')
             print('[2] Flee')
@@ -137,7 +162,9 @@ def enemy_encounter():
                 action = input("> ")
             
             if action == '1':
+                
                 clear_screen()
+                
                 enemy.hp -= mainPlayer.attack
                 print("Player did", mainPlayer.attack, "damage to", enemy.name)
                 playerTurn = False
@@ -145,11 +172,15 @@ def enemy_encounter():
                 print()
                 print("Press any button to continue")
                 msvcrt.getch()
+                
             elif action == '2':
+                
+                clear_screen()
+                
                 diceRoll = random.randint(0,100) # Remember to reset
                 if diceRoll < 75:
                     #print(diceRoll)
-                    print('succesfully fleed!')
+                    print('Succesfully fled!')
                     flee = True
                     print()
                     print("Press any button to continue")
@@ -157,7 +188,7 @@ def enemy_encounter():
                     game_start()
                     #break
                 else:
-                    print('you were not able to escape')
+                    print('You were not able to escape')
                     action = None
                     playerTurn = False
                     print()
@@ -177,6 +208,8 @@ def enemy_encounter():
             
             elif action =='4':
                 
+                clear_screen()
+                
                 itemInp = None
                 
                 check_inv()
@@ -185,14 +218,15 @@ def enemy_encounter():
                 print()
                 print("Enter the name of the item you want to use")
                 
-                while itemInp not in usable_items and itemInp != '1':
+                while itemInp != '1' and (itemInp not in usable_items or itemInp not in mainPlayer.inventory):
                     itemInp = input("> ")
+                    print(itemInp)
                 
                 if itemInp == "1":
                     clear_screen()
                     itemInp = None
                     
-                elif itemInp in usable_items:
+                elif itemInp in usable_items and mainPlayer.inventory:
                     clear_screen()
                     use_item(itemInp)
                     itemInp = None
@@ -217,7 +251,7 @@ def enemy_encounter():
         print("It dropped ", drop,"!", sep='')
         
         if drop == "Gold":
-            mainPlayer.gold += 1
+            mainPlayer.gold += 10
         elif drop not in mainPlayer.inventory:
             mainPlayer.inventory[drop] = 1
         else:
@@ -242,9 +276,98 @@ def enemy_encounter():
 # Shopkeepers Inventory
 shopInventory = {
     "Potion": 3,
-    "Wood Sword": 1,
+    "Wooden Sword": 1,
     "Leather Armor": 1
 }
+
+# Buy Items Mechanic
+def buy_items():
+    clear_screen()
+            
+    print("Shopkeeper: Well then let me show you my wares!")
+    print()
+    print("Gold:", mainPlayer.gold)
+    print()
+    print("[1] Return")
+    print()
+            
+    listNum = 1
+            
+    for i in shopInventory:       
+        if shopInventory.get(i) > 0:
+            print(listNum,". ", i, " x ", shopInventory.get(i), " - ", pricelist.get(i), " Gold",sep = '')
+            listNum += 1
+     
+    option = input("> ")
+            
+    if option =="1":
+        shop()
+    elif option in shopInventory and shopInventory.get(i) > 0:
+                
+        if mainPlayer.gold > pricelist.get(option):
+                    
+            mainPlayer.gold -= pricelist.get(option)
+                
+            shopInventory[option] -= 1
+                    
+            if option not in mainPlayer.inventory:
+                mainPlayer.inventory[option] = 1
+            else:
+                mainPlayer.inventory[option] += 1
+                        
+            clear_screen()   
+            print("Shopkeeper: Thanks for your business laddie!")
+            print()
+            print("Obtained 1", option)
+                    
+            print()
+            print("Press any button to continue")
+            msvcrt.getch()
+                
+        else:
+            clear_screen()
+            print("Shopkeeper: You dont have enough money laddie.")
+                    
+            print()
+            print("Press any button to continue")
+            msvcrt.getch()
+
+# Sell Items Mechanic
+def sell_items():
+    
+    clear_screen()
+    
+    option = None
+            
+    print("Shopkeeper: What are you selling?")
+    
+    count = 1
+            
+    for i in mainPlayer.inventory:
+        print(count, ". ", i, ' x ', mainPlayer.inventory.get(i),' - ',int(pricelist.get(i)/2), sep='')
+    
+    print()
+    print("[1] Go Back")
+    print()
+        
+    while option not in mainPlayer.inventory and option != '1':
+        option = input("> ")
+        
+    if option in mainPlayer.inventory:
+        
+        clear_screen()
+        
+        mainPlayer.inventory[option] -= 1
+        mainPlayer.gold += int(pricelist.get(option)/2)
+        print("Shopkeeper: Thanks for your patronage laddie!")
+        print()
+        print("You gained", int(pricelist.get(option)/2), "coins!")
+        print("You now have", mainPlayer.gold, "coins")
+        print()
+        print("Press any key to continue.")
+        msvcrt.getch()
+        
+    shop()
 
 # Shop Mechanics
 def shop():
@@ -258,46 +381,30 @@ def shop():
     print("[1] Buy")
     print("[2] Sell")
     print("[3] Go Back")
-    print()
     
     while option not in ['1', '2', '3']:
         option = input("> ")
         
         if option == '1':
-            print("Shopkeeper: Well then let me show you my wares!")
-            print()
             
-            listNum = 1
-            
-            for i in shopInventory:
-                
-                if(shopInventory.get(i) > 0):
-                    print(listNum, i, "x", shopInventory.get(i))
-                    listNum += 1
-     
-            option = input("> ")
-            
-            if option =="":
-                shop()
-            elif option in shopInventory and shopInventory.get(i) > 0:
-                shopInventory[option] -= 1
-                
-                if option not in mainPlayer.inventory:
-                    mainPlayer.inventory[option] = 1
-                else:
-                    mainPlayer.inventory[option]+=1
-                
+            buy_items()
             
             option = None
-            game_start() 
+            shop()
+        elif option == "2":
+            
+            sell_items()
+             
         else:
             game_start()                
-           
+
+# Main Hub           
 def game_start():
     clear_screen()
     option = None
     
     print("What do you want to do?")
+    print()
     print("[1] Enter Dungeon")
     print("[2] Go to Shop")
     print("[3] Check Stats & Inventory")
@@ -314,6 +421,7 @@ def game_start():
     elif option == '4':
         title_screen()
     elif option == '3':
+        clear_screen()
         check_stats()
         check_inv()
         
