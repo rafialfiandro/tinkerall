@@ -20,6 +20,8 @@ class player:
         self.status_effects = []
         self.inventory = {}
         self.gold = 100 
+        self.armour = 'None'
+        self.weapon = 'None'
 mainPlayer = player()
 
 # Declare Master List of Items and Sell Values
@@ -57,6 +59,23 @@ healing = {
     
     # Status Effect Recovery
     "Antidote": [None, "Poison"]
+}
+
+# Weapons Item List
+weapons = {
+    "None": 0,
+    "Wooden Sword": 5,
+    "Iron Dagger": 7,
+    "Rusty Sword": 5,
+    "Orc Axe": 10,
+    "Cursed Blade": 20,
+}
+
+# Armour List
+armour = {
+    "None": 0,
+    "Leather Armor": 10,
+    "Bronze Shield": 15,
 }
 
 # Declare item effects
@@ -117,7 +136,8 @@ def check_inv():
     print()
     
     for i in mainPlayer.inventory:
-        print(i, "x", mainPlayer.inventory.get(i))
+        if mainPlayer.inventory.get(i) > 0:
+            print(i, "x", mainPlayer.inventory.get(i))
 
 # Check stats function
 def check_stats():
@@ -125,6 +145,94 @@ def check_stats():
     print("Attack:", mainPlayer.attack)
     print("Gold:", mainPlayer.gold)
 
+# Item Equip Mechanic
+def equip_items():
+    
+    clear_screen()
+    
+    option = None
+    
+    print("Weapon:", mainPlayer.weapon)
+    print("Armour:", mainPlayer.armour)
+        
+    print()
+    print("Available Weapons:")    
+    
+    count = 1
+    
+    for i in mainPlayer.inventory:
+        if i in weapons and mainPlayer.inventory.get(i) > 0:
+            print(count,'. ',i,sep='')
+            count+=1
+    
+    print()
+    print("Available Armour:")  
+    
+    count = 1
+    
+    for i in mainPlayer.inventory:
+        if i in armour and mainPlayer.inventory.get(i) > 0:
+            print(count,'. ',i,)
+            count+=1
+    
+    print()  
+    print("[1] Go Back")
+    print()
+    print("Please input what you would like to equip.")
+    
+    option = input("> ")
+    
+    while option != None and option not in ['1'] and option not in weapons and option not in armour:
+        option = input("> ")
+        
+    if option == '1':
+        character_menu()
+    elif option in weapons:
+        
+        mainPlayer.inventory[option]-=1
+        
+        if mainPlayer.weapon != 'None':
+            
+            if mainPlayer.weapon not in mainPlayer.inventory:
+                mainPlayer.inventory[mainPlayer.weapon] = 1
+            else:
+                mainPlayer.inventory[mainPlayer.weapon] += 1
+        
+        mainPlayer.weapon = option
+        
+    elif option in armour:
+        
+        mainPlayer.inventory[option]-=1
+        
+        if mainPlayer.armour != 'None':
+            
+            if mainPlayer.armour not in mainPlayer.inventory:
+                mainPlayer.inventory[mainPlayer.armour] = 1
+            else:
+                mainPlayer.inventory[mainPlayer.armour] += 1
+                
+        mainPlayer.armour = option
+        
+    msvcrt.getch
+  
+# Check Stats Inv and Equip
+def character_menu():
+    
+    option = None
+    
+    clear_screen()
+    check_stats()
+    check_inv()
+        
+    print("[1] Equip Items")
+    print("[2] Go Back")
+    
+    while option == None and option not in ['1','2']:
+        option = input("> ")
+    
+    if option == '1':
+        equip_items()  
+  
 # Enemy Encounter Function    
 def enemy_encounter():
     
@@ -136,6 +244,9 @@ def enemy_encounter():
     playerTurn = True
     enemyDefeat = False
     playerDefeat = False
+    totalAttack = mainPlayer.attack + weapons.get(mainPlayer.weapon)
+    
+    print(mainPlayer.weapon, weapons.get(mainPlayer.weapon))
     
     print("An enemy encounter!")
     
@@ -151,6 +262,7 @@ def enemy_encounter():
         if playerTurn == True:
             print('Enemy:', enemy.name)
             print('Enemy HP:', enemy.hp)
+            print(totalAttack)
             print()
             print('What would you like to do?')
             print('[1] Attack')
@@ -165,8 +277,8 @@ def enemy_encounter():
                 
                 clear_screen()
                 
-                enemy.hp -= mainPlayer.attack
-                print("Player did", mainPlayer.attack, "damage to", enemy.name)
+                enemy.hp -= totalAttack
+                print("Player did", totalAttack, "damage to", enemy.name)
                 playerTurn = False
                 action = '0'
                 print()
@@ -288,8 +400,6 @@ def buy_items():
     print()
     print("Gold:", mainPlayer.gold)
     print()
-    print("[1] Return")
-    print()
             
     listNum = 1
             
@@ -297,7 +407,9 @@ def buy_items():
         if shopInventory.get(i) > 0:
             print(listNum,". ", i, " x ", shopInventory.get(i), " - ", pricelist.get(i), " Gold",sep = '')
             listNum += 1
-     
+    
+    print()
+    print("[1] Return") 
     option = input("> ")
             
     if option =="1":
@@ -344,16 +456,17 @@ def sell_items():
     count = 1
             
     for i in mainPlayer.inventory:
-        print(count, ". ", i, ' x ', mainPlayer.inventory.get(i),' - ',int(pricelist.get(i)/2), sep='')
+        if mainPlayer.inventory.get(i) > 0:
+            print(count, ". ", i, ' x ', mainPlayer.inventory.get(i),' - ',int(pricelist.get(i)/2), sep='')
+    print()
     
     print()
     print("[1] Go Back")
-    print()
         
-    while option not in mainPlayer.inventory and option != '1':
-        option = input("> ")
+    #while option not in mainPlayer.inventory and option != '1':
+    option = input("> ")
         
-    if option in mainPlayer.inventory:
+    if option in mainPlayer.inventory and mainPlayer.inventory.get(option) > 0:
         
         clear_screen()
         
@@ -366,7 +479,14 @@ def sell_items():
         print()
         print("Press any key to continue.")
         msvcrt.getch()
+    else:
         
+        clear_screen()
+        
+        print("Shopkeeper: What are you on about laddie?")
+        print()
+        print("Press any key to continue.")
+        msvcrt.getch()
     shop()
 
 # Shop Mechanics
@@ -412,9 +532,8 @@ def game_start():
     
     option = input("> ")
     
-    if option not in ['1','2', '3', '4', None]:
-        option = None
-        game_start()
+    while option not in ['1','2', '3', '4'] and option != None:
+        option = input("> ")
     
     if option == '1':
         enemy_encounter()
@@ -422,13 +541,7 @@ def game_start():
         title_screen()
     elif option == '3':
         clear_screen()
-        check_stats()
-        check_inv()
-        
-        print()
-        print("Press any button to continue")
-        msvcrt.getch()
-        
+        character_menu()      
         game_start()
     elif option == '2':
         shop()
