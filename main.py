@@ -458,7 +458,7 @@ def sell_items():
     for i in mainPlayer.inventory:
         if mainPlayer.inventory.get(i) > 0:
             print(count, ". ", i, ' x ', mainPlayer.inventory.get(i),' - ',int(pricelist.get(i)/2), sep='')
-            count++
+            count+=1
     print()
     
     print()
